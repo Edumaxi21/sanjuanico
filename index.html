@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación: Tragedia de San Juanico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #111827;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            transition: background-image 0.5s ease-in-out;
+            text-shadow: 0px 1px 10px rgba(0, 0, 0, 0.9);
+        }
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 2rem;
+            align-items: center;
+            justify-content: center;
+        }
+        .slide.active {
+            display: flex;
+        }
+        h1, h2 {
+            font-family: 'Montserrat', sans-serif;
+        }
+        /* --- CONTENIDO DE DIAPOSITIVA Y SCROLL --- */
+        .slide-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            max-height: 95%;
+            overflow-y: auto;
+            background-color: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(8px);
+        }
+        .slide-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .slide-content {
+          scrollbar-width: thin;
+          scrollbar-color: #fbbf24 #374151;
+        }
+        .slide-content::-webkit-scrollbar {
+          width: 8px;
+        }
+        .slide-content::-webkit-scrollbar-track {
+          background: #374151;
+          border-radius: 10px;
+        }
+        .slide-content::-webkit-scrollbar-thumb {
+          background-color: #fbbf24;
+          border-radius: 10px;
+          border: 2px solid #374151;
+        }
+        /* --- ELEMENTOS DE NAVEGACIÓN --- */
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+            background-color: rgba(251, 191, 36, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .nav-button:hover {
+            transform: scale(1.1);
+            background-color: rgba(251, 191, 36, 1);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+        }
+        /* --- FONDOS DE VIDEO --- */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+        .video-background {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            transform: translateX(-50%) translateY(-50%);
+            object-fit: cover;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #bg-youtube {
+            pointer-events: none;
+        }
+        /* --- ESTILOS GALERÍA (IMAGEN Y VIDEO) --- */
+        .gallery-item, .gallery-video-item { 
+            cursor: pointer; 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border-radius: 0.5rem; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+            position: relative;
+        } 
+        .gallery-item:hover, .gallery-video-item:hover { 
+            transform: scale(1.05); 
+            box-shadow: 0 10px 15px rgba(0,0,0,0.3); 
+        }
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            transition: background-color 0.3s;
+        }
+        .gallery-video-item:hover .play-icon {
+            background-color: rgba(251, 191, 36, 0.8);
+        }
+        .play-icon svg {
+            fill: white;
+            width: 30px;
+            height: 30px;
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
+
+    <div id="overlay"></div>
+    <!-- Contenedores para videos de fondo -->
+    <video id="bg-video" class="video-background" autoplay muted loop style="opacity:0;"></video>
+    <div id="bg-youtube-container" class="video-background" style="opacity:0;">
+        <iframe id="bg-youtube" width="100%" height="100%" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    </div>
+
+    <!-- MENÚ DESPLEGABLE DE DIAPOSITIVAS -->
+    <div class="absolute top-4 right-4 z-40">
+        <button id="menu-btn" class="nav-button p-2 rounded-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <div id="menu-panel" class="hidden absolute right-0 mt-2 w-72 bg-gray-800 bg-opacity-90 backdrop-blur-md rounded-lg shadow-xl overflow-y-auto max-h-96">
+            <ul id="menu-list" class="p-2 text-white"></ul>
+        </div>
+    </div>
+
+    <div id="presentation-container" class="w-full max-w-5xl h-[80vh] rounded-2xl overflow-hidden relative flex items-center justify-center">
+        <div id="slides-wrapper" class="relative w-full h-full">
+            
+            <!-- Diapositiva 0: NUEVA DIAPOSITIVA DE INTRODUCCIÓN -->
+            <div class="slide active flex-col items-center justify-center text-center" 
+                 data-bg-image="imagenes/logoasp.png"
+                 data-bg-video="">
+                <div class="slide-content">
+                    <img src="imagenes/logo_malvinas.png" alt="Logo Bomberos Malvinas Argentinas" class="h-24 mx-auto mb-4" onerror="this.style.display='none'">
+                    <h2 class="text-4xl font-light text-gray-200">Aspirantes 2025</h2>
+                    <h1 class="text-5xl font-bold text-amber-400 mt-2">Presentan</h1>
+                </div>
+            </div>
+
+            <!-- Diapositiva 1: Portada -->
+            <div class="slide flex-col items-center justify-center text-center" 
+                 data-bg-image="imagenes/imagen1.png"
+                 data-bg-video="">
+                <div class="slide-content">
+                    <h1 class="text-5xl font-bold text-amber-400 mb-4">TRAGEDIA DE SAN JUANICO, 1984</h1>
+                    <h2 class="text-3xl font-light text-gray-200 mb-6">Análisis y Lecciones para la Formación en Emergencias</h2>
+                    <div class="text-lg text-gray-300 mt-4">
+                        <h3 class="font-bold mb-2">Integrantes:</h3>
+                        <ul class="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-1 text-left max-w-4xl mx-auto text-sm">
+                            <li>**Encargado:** ASP PEREZ EDUARDO</li>
+                            <li>ASP PADILLA MATIAS</li>
+                            <li>ASP CORONEL AGUSTIN</li>
+                            <li>ASP POLO FACUNDO</li>
+                            <li>ASP MAYANO ARIADANA</li>
+                            <li>ASP FERNANDEZ TOMAS</li>
+                            <li>ASP GRAFF MAURO</li>
+                            <li>ASP ARGUELLO ALEXIS</li>
+                            <li>ASP NIEVA ABRIL</li>
+                            <li>ASP GARCIA DAVID</li>
+                            <li>ASP RUIZ DANIEL</li>
+                        </ul>
+                    </div>
+                    <p class="text-xl text-gray-300 mt-4">**Institución:** Bomberos Voluntarios de Argentina - Aspirantes 2025</p>
+                </div>
+            </div>
+
+            <!-- Diapositiva 2: Introducción General -->
+            <div class="slide flex-col items-center justify-center text-center"
+                 data-bg-image="imagenes/imagen_aerea.jpeg"
+                 data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">El Día que Marcó un Antes y un Después</h2>
+                    <p class="text-xl text-left text-gray-200 leading-relaxed">"El 19 de noviembre de 1984, la comunidad de San Juan Ixhuatepec fue escenario de una de las peores tragedias industriales de la historia de México. Una serie de devastadoras explosiones en una planta de almacenamiento de PEMEX no solo dejó una profunda cicatriz en la comunidad, sino que transformó para siempre la seguridad industrial y la protección civil en el país. Este trabajo analiza las causas, el impacto y las lecciones de un desastre que nunca debe ser olvidado, especialmente por quienes nos preparamos para responder a emergencias."</p>
+                </div>
+            </div>
+            
+            <!-- Diapositivas 3 a 11 (Temas) -->
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/aerea2.png" data-bg-video="">
+                 <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 1: Contexto - Crónica de un Riesgo Anunciado</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Comunidad en Riesgo:** San Juan Ixhuatepec (San Juanico) era una zona de rápido crecimiento y densamente poblada, con viviendas, a veces precarias, construidas muy cerca de la planta de PEMEX.</li>
+                        <li>**Planta Estratégica:** La instalación almacenaba y distribuía Gas Licuado de Petróleo (GLP), siendo una de las más grandes de América Latina y vital para el suministro energético del Valle de México.</li>
+                        <li>**Seguridad Deficiente:** Investigaciones posteriores sugirieron graves fallas de seguridad, como un cumplimiento dudoso de las normativas, mantenimiento cuestionado y la peligrosa proximidad de las viviendas.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/fuga.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 2: Minuto a Minuto - La Mañana del Horror</h2>
+                    <ul class="text-xl text-left text-gray-200 list-inside space-y-4">
+                        <li>**05:30 hs - La Fuga:** Una falla, probablemente la ruptura de una tubería, provocó una fuga masiva de GLP. Durante 10 a 15 minutos, una nube de gas invisible y más densa que el aire se extendió por la planta y las calles cercanas. Testimonios hablan de un fuerte olor a gas y un "silbido" constante</li>
+                        <li>**05:44 hs - La Primera Explosión:** La nube de gas encontró un punto de ignición, causando una explosión brutal descrita como un terremoto y un destello cegador. Esta primera bola de fuego arrasó con todo en un radio de cientos de metros.</li>
+                        <li>**05:46 hs en adelante - Las BLEVEs:** El fuego inicial sobrecalentó otros tanques, desatando una secuencia aterradora de al menos once explosiones tipo BLEVE durante la siguiente hora, multiplicando la destrucción.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/Mex7.gif" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 3: Causas Técnicas - La Falla Fatal</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Fuga Inicial:** El desastre comenzó con una fuga masiva de GLP, probablemente por la ruptura de una tubería de unas 8 pulgadas de diámetro</li>
+                        <li>**Ignición:** La nube de gas encontró una fuente de ignición (posiblemente quemadores de la planta o una falla eléctrica), causando una primera y devastadora explosión de tipo UVCE (Explosión de Nube de Vapor No Confinada).</li>
+                        <li>**Efecto en Cadena (BLEVEs):** El intenso fuego de la primera explosión calentó otros tanques, debilitando su estructura y aumentando la presión interna hasta que fallaron catastróficamente, generando múltiples BLEVEs que lanzaron bolas de fuego y fragmentos de metal.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/imagen5.png" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 4: Causas Subyacentes - La "Tormenta Perfecta"</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Mantenimiento y Procedimientos:** Se sugiere un mantenimiento deficiente y falta de revisiones. Un error crítico fue el sobrellenado de los tanques de almacenamiento, lo que aumenta drásticamente el riesgo de explosión por sobrepresión.</li>
+                        <li>**Diseño y Ubicación:** La planta estaba peligrosamente pegada a una zona residencial densamente poblada, sin zonas de seguridad. Además, los tanques estaban muy próximos entre sí, lo que facilitó el "efecto dominó.</li>
+                        <li>**Fallas Regulatorias:** Todo fue posible por un marco regulatorio débil y una falta de supervisión efectiva, lo que generó una cultura donde los riesgos se subestimaban,</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/heridos.jpeg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 5: Impacto Humano Inmediato</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Víctimas:** Cientos de fallecidos oficiales  dejó un saldo de 500 o más muertos y aproximadamente 2,000 heridos. Además, más de 10,000 personas fueron evacuadas debido a los daños causados por las explosiones en un área de hasta un kilómetro alrededor de la planta de almacenamiento de gas. </li>
+                        <li>**Drama Humano:** Detrás de cada número, hay historias de terror y pérdida, con familias enteras destrozadas. El impacto psicológico inmediato fue un estado de shock y desesperación.</li>
+                        <li>**Caos:** La "zona cero" se convirtió en un infierno, con pánico generalizado, gente huyendo y un acceso muy dificultoso para los primeros rescatistas.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/bombero.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 6: Respuesta de Bomberos - Héroes en el Infierno</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Primeros en Llegar:** Los cuerpos de bomberos más cercanos (Tlalnepantla y D.F.) encontraron un escenario apocalíptico que superaba cualquier entrenamiento, con explosiones continuas ocurriendo ante sus ojos.</li>
+                        <li>**Táctica Principal:** La estrategia fue defensiva: el enfriamiento masivo con agua de los tanques que aún no habían explotado para intentar evitar más BLEVEs.</li>
+                        <li>**Desafíos:** Lucharon una batalla desigual con equipamiento de protección muy limitado para los estándares actuales, enfrentando falta de agua, el riesgo mortal de las explosiones y accesos bloqueados.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/medico.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 7: La Respuesta Unida</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Instituciones:** La Cruz Roja fue vital en la atención médica y traslado de heridos. El Ejército implementó el Plan DN-III-E para asegurar el perímetro y apoyar en la logística, mientras la policía trabajó para controlar el caos.</li>
+                        <li>**Rescate y Evacuación:** Se realizaron labores de rescate desesperadas y peligrosas para buscar sobrevivientes, mientras miles de personas eran evacuadas en medio del pánico.</li>
+                        <li>**Solidaridad Popular:** La sociedad civil mexicana reaccionó con una increíble ola de solidaridad, donando sangre, comida, ropa y medicinas, y con cientos de voluntarios ayudando directamente en la zona.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/fosas.jpeg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 8: Consecuencias a Largo Plazo</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Psicológicas:** La tragedia dejó un trauma masivo, con miles de personas desarrollando Trastorno de Estrés Postraumático (TEPT), afectando a sobrevivientes, familiares y rescatistas.</li>
+                        <li>**Identificación:** Fue un proceso largo y doloroso debido al estado irreconocible de muchos cuerpos, lo que obligó al uso de fosas comunes inicialmente.</li>
+                        <li>**Reconstrucción:** Cierre definitivo de la planta de PEMEX y un monumental trabajo de limpieza y reconstrucción de la zona.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/imagen6.png" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 9: Un Nuevo Paradigma en Prevención</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Leyes:** San Juanico forzó la modernización de las leyes. Fue un catalizador para la creación del Sistema Nacional de Protección Civil (SINAPROC) en 1986 y el endurecimiento de las Normas Oficiales Mexicanas (NOMs).</li>
+                        <li>**Protocolos:** Nació la protección civil moderna, basada en la prevención y planificación, obligando a las industrias a tener planes de emergencia y dando importancia a los simulacros y la coordinación.</li>
+                        <li>**Zonificación:** La tragedia demostró la necesidad crítica de mantener distancias seguras (zonas de amortiguamiento) entre las industrias de alto riesgo y las viviendas.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/homenaje.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Tema 10: Memoria y Relevancia Actual</h2>
+                    <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Memoria Histórica:** Se mantiene viva a través de monumentos y conmemoraciones anuales, lideradas principalmente por los sobrevivientes y sus familias.</li>
+                        <li>**Relevancia para Bomberos:** San Juanico es una lección fundamental y permanente sobre los riesgos del GLP, las BLEVEs, la importancia de conocer las instalaciones peligrosas, la coordinación y, sobre todo, la autoprotección del rescatista.</li>
+                        <li>**Compromiso:** Mantener la memoria es una herramienta de prevención y un homenaje a las víctimas, que obliga a los futuros profesionales a prepararse con excelencia.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- *** DIAPOSITIVA DE GALERÍA CON VIDEOS *** -->
+            <div class="slide flex-col" data-bg-image="imagenes/aerea2.png">
+                <div class="slide-content w-full max-w-4xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6 text-center">Galería Multimedia</h2>
+                    <p class="text-center text-gray-300 mb-6">Haz clic en un elemento para ampliarlo.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Imágenes -->
+                        <img src="imagenes/imagen1.png" alt="Vista aérea de la destrucción" class="gallery-item">
+                        <img src="imagenes/imagen2.png" alt="Equipos de emergencia trabajando" class="gallery-item">
+                        <img src="imagenes/imagen3.png" alt="Esferas de gas después de la explosión" class="gallery-item">
+                        
+                        <!-- Video de YouTube -->
+                        <div class="gallery-video-item" data-video-src="https://www.youtube.com/watch?v=ekZQzqGjn6w">
+                            <img src="https://i.ytimg.com/vi/bWahoG5Kz44/maxresdefault.jpg" alt="Miniatura de video sobre San Juanico" class="w-full h-full object-cover rounded-lg">
+                            <div class="play-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+
+                        <div class="gallery-video-item" data-video-src="imagenes/Videotiktok.mp4">
+                            <img src="https://i.ytimg.com/vi/bWahoG5Kz44/maxresdefault.jpg" alt="Miniatura de video sobre San Juanico" class="w-full h-full object-cover rounded-lg">
+                            <div class="play-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+
+                        <!-- Más imágenes -->
+                        <img src="imagenes/imagen5.png" alt="Labores de rescate" class="gallery-item">
+                        <img src="imagenes/imagen6.png" alt="Monumento a las víctimas" class="gallery-item">
+                        <img src="imagenes/glpgemini.png" alt="Monumento a las víctimas" class="gallery-item">
+                        <img src="imagenes/glpweb.jpg" alt="Monumento a las víctimas" class="gallery-item">
+                        <img src="imagenes/bleve1.jpeg" alt="Monumento a las víctimas" class="gallery-item">
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide flex-col items-center justify-center text-center" data-bg-image="imagenes/mapa.jpg" data-bg-video="">
+                <div class="slide-content">
+                    <h1 class="text-5xl font-bold text-amber-400 mb-4">LECCIÓN ORAL</h1>
+                    <h2 class="text-3xl font-light text-gray-200">Buenos días. El propósito de esta lección es analizar la tragedia de San Juan Ixhuatepec de 1984, no como un hecho histórico, sino como un caso de estudio para definir cómo actuaríamos hoy, en nuestro partido de Malvinas Argentinas, ante un evento de similar magnitud. 📈 Se demostrará cómo la aplicación de protocolos modernos, el conocimiento técnico y una estructura de mando clara y escalonada transformarían por completo el resultado de una operación de esta escala. Análisis del Incidente Original y Escenario Hipotético 💥</h2>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/mapamal.png" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">El Escenario y el Nuevo Paradigma</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Incidente Original:** Ruptura de cañería de GLP en PEMEX, fuga masiva, ignición y secuencia de BLEVEs en 6 esferas y 48 cilindros.</li>
+                        <li>**Escenario Hipotético:** Planta ficticia "Energas del Norte S.A." en el Parque Industrial de Malvinas Argentinas. 05:30 hs, ocurre la ignición.</li>
+                        <li>**Nuevo Paradigma:** La respuesta moderna se basa en protocolo, conocimiento y estructura, no en el coraje individual.</li>
+                    </ul>
+                </div>
+            </div>
+             <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/PLANTAS_YPFB.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">FASE 1: Alarma y Evaluación Inicial</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Escenario y situación inicial:** Planta ficticia “Energas del Norte S.A.” en Malvinas Argentinas, dedicada al almacenamiento de GLP con cinco esferas de gran capacidad. A las 05:30 h, una falla en una brida provoca fuga masiva de gas.</li>
+                        <li>**Acción Inmediata:** El equipo de emergencias intenta cerrar la válvula de seccionamiento con protección y líneas de agua, pero la fuga supera su control. Una chispa provoca explosión inicial y BLEVE de una esfera de 1.600 m³, seguido por otro BLEVE en una segunda esfera mediana.</li>
+                        <li>**Decisión Crítica:** Dos esferas destruidas; las tres restantes expuestas a calor extremo y en riesgo inminente de explotar. Daños severos en la planta y bajas humanas.</li>
+                        <li>**Reporte:** Se declara “Alarma General por Catástrofe” y se despachan 4 dotaciones de bomberos, SAME, Defensa Civil, Policía, Tránsito y cuarteles vecinos. La primera unidad establece un perímetro de 800 m según la GRE y solicita refuerzos para una respuesta masiva.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- NUEVA DIAPOSITIVA: GLP -->
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/glpweb.jpg" data-bg-video="">
+                <div class="slide-content max-w-4xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Concepto Clave: ¿Qué es el GLP?</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Definición:** Gas Licuado de Petróleo, una mezcla de gases propano y butano que se almacena en estado líquido bajo presión.</li>
+                        <li>**Propiedades Clave:**
+                            <ul class="list-disc list-inside ml-6 mt-2">
+                                <li>**Más pesado que el aire:** En una fuga, no se disipa hacia arriba. Se arrastra por el suelo como un líquido invisible, acumulándose en zonas bajas (sótanos, alcantarillas).</li>
+                                <li>**Altamente Inflamable:** Requiere solo una pequeña chispa para encenderse de forma explosiva.</li>
+                                <li>**Gran Expansión:** 1 litro de GLP líquido se convierte en aproximadamente 270 litros de gas, creando nubes masivas muy rápidamente.</li>
+                            </ul>
+                        </li>
+                        <li>**Peligro Principal:** La formación de estas nubes de vapor no confinadas (UVCE) que, al encontrar una ignición, provocan la devastadora explosión inicial.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/bleve1.jpeg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Riesgo Principal: ¿Qué es un BLEVE?</h2>
+                    <p class="text-xl text-left text-gray-200 leading-relaxed">BLEVE (Boiling Liquid Expanding Vapor Explosion) 🔥💣
+                            ¿Qué es? Es la madre de todas las explosiones en un incendio con tanques. Imagina una olla a presión que dejas en el fuego sin válvula de seguridad. El líquido adentro hierve, la presión sube, el metal de la olla se calienta y se debilita hasta que... ¡PUM!
+                            La Secuencia Exacta:
+                            Fuego Externo: Las llamas de un incendio calientan un tanque que contiene GLP.
+                            El Líquido Hierve: El GLP dentro del tanque empieza a hervir, generando una presión interna brutal.
+                            El Metal se Debilita: El fuego debilita el metal del tanque, sobre todo en la parte de arriba donde solo hay vapor.
+                            Falla Catastrófica: El tanque no aguanta más y se rompe violentamente. El líquido sobrecalentado se libera de golpe, se expande instantáneamente y se enciende, creando una gigantesca bola de fuego y lanzando trozos del tanque a cientos de metros.
+</p>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/SCI.jpeg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">FASE 2: Sistema de Comando de Incidentes (SCI)</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Establecimiento del Puesto de Comando y Comando Unificado:** El Jefe del Cuerpo asume como Comandante del Incidente, activa el Sistema de Comando de Incidentes (SCI) y establece un Puesto de Comando seguro y contra el viento. Se conforma un Comando Unificado con Bomberos, Defensa Civil, SAME y Policía para coordinar decisiones estratégicas.</li>
+                        <li>Roles clave del Staff de Comando
+                                Jefe de Operaciones: Ejecuta el Plan de Acción, dirige extinción, enfriamiento y rescate.
+
+                                Jefe de Planificación: Analiza información, actualiza mapas, prepara planes a 12 horas.
+
+                                Jefe de Logística: Abastece agua, combustible, EPP y coordina relevos.
+
+                                Oficial de Seguridad: Controla riesgos, define zonas y puede detener operaciones peligrosas.</li>
+                        <li>Brigadas especializadas y escalada de recursos
+                        Se activa la brigada de Materiales Peligrosos (MatPel) para monitoreo y asesoramiento técnico. Defensa Civil inicia escalada provincial y, de ser necesario, nacional (SINAGIR) para sumar recursos federales.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- NUEVA DIAPOSITIVA: SCI -->
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/sci2.png" data-bg-video="">
+                <div class="slide-content max-w-4xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">¿Qué es el Sistema de Comando de Incidentes?</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Definición:** Un sistema de gestión estandarizado para organizar la respuesta ante emergencias complejas. Su objetivo es evitar el caos, establecer una cadena de mando clara y coordinar a múltiples agencias.</li>
+                        <li>**Principios Clave:**
+                            <ul class="list-disc list-inside ml-6 mt-2">
+                                <li>**Comando Unificado:** Jefes de distintas agencias (Bomberos, Policía, SAME) toman decisiones juntos en un solo Puesto de Comando.</li>
+                                <li>**Roles Definidos:** Se designan Jefes para cada área funcional: Operaciones, Planificación, Logística y Administración/Finanzas, además de un Oficial de Seguridad.</li>
+                                <li>**Comunicaciones Claras:** Se usa un lenguaje común y canales de radio designados para evitar malentendidos.</li>
+                            </ul>
+                        </li>
+                        <li>**Acción Inmediata:** Permite gestionar los recursos de manera eficiente y segura, garantizando que cada persona en la escena sepa qué hacer, a quién reportar y cuáles son los objetivos.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/Monitor_portatil.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">FASE 3: Táctica 100% Defensiva</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>**Estrategia:** Estrategia General: Enfriamiento Masivo
+                            La estrategia es una y no es negociable: DEFENSIVA. El objetivo principal no es extinguir el fuego de gas, sino salvar las tres esferas restantes (las dos grandes de 2,400 m³ y la mediana de 1,600 m³) previniendo nuevos BLEVEs. Esto se logra mediante la aplicación masiva y continua de agua para enfriar la estructura metálica de los tanques.
+                            </li>
+
+                        <li>3.2 Movilización y Logística del Agua 💧
+                            El éxito de la operación depende de un flujo de agua ininterrumpido. El Jefe de Operaciones y el de Logística establecen un sistema metódico:
+                            Área de Espera (Staging Area): Se establece un punto de concentración en la Zona Fría (ej: un estacionamiento amplio). Toda unidad que llega, sin excepción, se reporta y estaciona allí. Ningún vehículo se mueve sin una orden directa del Jefe de Operaciones. Esto evita el congestionamiento y el caos en la escena.
+                            Posicionamiento de "Autobombas Madre": Desde el Área de Espera, se ordena el avance de unidades específicas. Estas autobombas no van a atacar el fuego directamente. Se posicionan en el límite entre la Zona Tibia y la Fría y actúan como bombas de alta presión, impulsando el agua hacia los monitores.
+                            El "Circuito del Agua": Para alimentar a las "bombas madre", se crea un carrusel de camiones cisterna:
+                            Punto de Carga: Se establece un punto de carga lejos de la escena (un hidrante industrial, un lago o el canal de un arroyo cercano).
+                            Transporte y Descarga: Los cisternas se llenan y viajan hasta la Zona Tibia, donde descargan su contenido en piletas de lona portátiles de gran capacidad (15,000 a 25,000 litros).
+                            Alimentación: Las "autobombas madre" succionan el agua de estas piletas y la bombean a la presión requerida.
+                            Regreso: El cisterna vacío regresa inmediatamente al punto de carga. Este ciclo garantiza un abastecimiento constante y masivo.</li>
+                        <li>Táctica de Enfriamiento y Uso de Agentes
+                            Caudal de Agua Requerido: La norma indica que se debe aplicar un caudal mínimo de 10 litros por minuto por cada metro cuadrado de superficie del tanque. Para una esfera de 2,400 m³, esto se traduce en un objetivo de entre 10,000 y 15,000 litros por minuto (LPM) aplicados directamente sobre su superficie para absorber el calor de la radiación.
+                            Despliegue de Monitores ("Operación Relámpago"):
+                            Se forman Equipos de Despliegue de 2-3 bomberos.
+                            Bajo una "Línea de Protección" (cortina de agua) que los protege del calor radiante, avanzan rápidamente usando cobertura física.
+                            La operación de colocar el monitor portátil y retirarse debe lo mas rapido posible.
+                            Una vez el equipo está a salvo, el operador de la "autobomba madre" da presión a la línea y el monitor comienza a operar de forma desatendida. Se necesitan de 2 a 4 monitores de gran caudal por cada esfera para asegurar un enfriamiento efectivo.
+                            Uso de Espuma (Rol Secundario): ☁️ La espuma NO se usa para apagar el fuego principal de gas. Su rol es vital pero secundario:
+                            Proteger Exposiciones: Se aplica sobre derrames de otros líquidos inflamables en la planta para evitar que se enciendan.
+                            Supresión de Vapores: Si se logra cerrar una válvula y queda un charco de GLP líquido, una capa de espuma de alta expansión puede reducir drásticamente la evaporación y el riesgo de una re-ignición.
+</li>
+                        <li>**Operación Remota:** Se da presión a las líneas desde una distancia segura.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/retiro.avif" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">FASES 4 y 5: Control y Cierre del Servicio</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>Control y Estabilización
+El incidente se declara “Controlado” cuando las temperaturas en las esferas bajan a niveles seguros, el fuego principal disminuye y no hay riesgo de propagación. Se establece una Guardia de Cenizas con enfriamiento continuo, extinción de focos secundarios y vigilancia para investigadores. Se inicia la desmovilización ordenada y agradecimiento a los cuarteles de apoyo.</li>
+                        <li>**Guardia de Cenizas:** Finalización del Servicio
+Una vez segura la escena, se transfiere formalmente el control a peritos de bomberos y Policía Científica, bajo la autoridad judicial. Se planifica el regreso de las dotaciones y el retiro organizado del área.</li>
+                        <li>**Post-Incidente:** En el cuartel se realizan pruebas hidrostáticas a mangueras, recarga y revisión de ERAs, y mantenimiento mecánico de autobombas. Se cuida al personal con un debriefing operativo inmediato y sesiones de apoyo psicológico (CISD) en los días posteriores para gestionar el estrés y el impacto emocional.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center" data-bg-image="imagenes/bomberosmal.jpg" data-bg-video="">
+                <div class="slide-content max-w-3xl">
+                    <h2 class="text-4xl font-bold text-amber-400 mb-6">Conclusión Final: De la Tragedia al Protocolo</h2>
+                     <ul class="text-xl text-left text-gray-200 list-disc list-inside space-y-4">
+                        <li>La respuesta moderna se basa en **protocolo, conocimiento y una estructura escalonada**.</li>
+                        <li>Pasamos del coraje individual a una operación profesional gestionada por un **Sistema de Comando de Incidentes**.</li>
+                        <li>Cada bombero conoce su función, los riesgos como el BLEVE y las herramientas como la GRE.</li>
+                        <li>El objetivo es cumplir con el deber, garantizando que **todos volvamos a casa**.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide flex-col items-center justify-center text-center" data-bg-image="https://placehold.co/1920x1080/111827/FFFFFF?text=Equipo+de+Bomberos" data-bg-video="">
+                 <div class="slide-content">
+                    <h1 class="text-5xl font-bold text-amber-400 mb-6">¡Muchas Gracias!</h1>
+                    <p class="text-xl text-gray-300 mb-4">Agradecimientos: [A los instructores, al cuartel, y compañeros]</p>
+                    <div class="text-lg text-gray-300">
+                        <h3 class="font-bold mb-2">Integrantes:</h3>
+                        <ul class="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-1 text-left max-w-4xl mx-auto text-sm">
+                            <li>**Encargado:** ASP PEREZ EDUARDO</li>
+                            <li>ASP PADILLA MATIAS</li>
+                            <li>ASP CORONEL AGUSTIN</li>
+                            <li>ASP POLO FACUNDO</li>
+                            <li>ASP MAYANO ARIADANA</li>
+                            <li>ASP FERNANDEZ TOMAS</li>
+                            <li>ASP GRAFF MAURO</li>
+                            <li>ASP ARGUELLO ALEXIS</li>
+                            <li>ASP NIEVA ABRIL</li>
+                            <li>ASP GARCIA DAVID</li>
+                            <li>ASP RUIZ DANIEL</li>
+                        </ul>
+                    </div>
+                    <p class="text-lg text-gray-300 mt-4">"Ubi dolor, ibi vigili"</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Navegación y Contador -->
+    <div class="w-full max-w-5xl mt-4 flex items-center justify-between">
+        <button id="prev-btn" class="nav-button text-gray-900 font-bold py-2 px-6 rounded-lg shadow-lg">Anterior</button>
+        <div id="slide-counter" class="text-lg font-semibold text-gray-300"></div>
+        <button id="next-btn" class="nav-button text-gray-900 font-bold py-2 px-6 rounded-lg shadow-lg">Siguiente</button>
+    </div>
+
+    <!-- Modal para ver imagen -->
+    <div id="image-modal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+        <span id="modal-close-img" class="absolute top-4 right-6 text-white text-5xl font-bold cursor-pointer hover:text-amber-400 transition-colors">&times;</span>
+        <img id="modal-image" src="" alt="Imagen ampliada" class="max-w-[90vw] max-h-[90vh] rounded-lg shadow-2xl">
+    </div>
+
+    <!-- Modal para ver video -->
+    <div id="video-modal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+        <span id="modal-close-vid" class="absolute top-4 right-6 text-white text-5xl font-bold cursor-pointer hover:text-amber-400 transition-colors">&times;</span>
+        <div class="w-full max-w-4xl aspect-video">
+            <iframe id="modal-video-iframe" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- SELECTORES DE ELEMENTOS ---
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            const body = document.body;
+            const bgVideo = document.getElementById('bg-video');
+            const bgYoutubeContainer = document.getElementById('bg-youtube-container');
+            const bgYoutube = document.getElementById('bg-youtube');
+            const menuBtn = document.getElementById('menu-btn');
+            const menuPanel = document.getElementById('menu-panel');
+            const menuList = document.getElementById('menu-list');
+            
+            // Selectores de Modales
+            const imageModal = document.getElementById('image-modal');
+            const modalImage = document.getElementById('modal-image');
+            const modalCloseImg = document.getElementById('modal-close-img');
+            const videoModal = document.getElementById('video-modal');
+            const modalVideoIframe = document.getElementById('modal-video-iframe');
+            const modalCloseVid = document.getElementById('modal-close-vid');
+
+            const defaultBgImage = "https://placehold.co/1920x1080/111827/FFFFFF?text=Fondo+General";
+            let currentSlide = 0;
+            let contentTimer;
+
+            // --- LÓGICA DEL MENÚ ---
+            slides.forEach((slide, index) => {
+                const titleElement = slide.querySelector('h1, h2');
+                let title = titleElement ? titleElement.textContent.trim() : `Diapositiva ${index + 1}`;
+                if (title.length > 30) title = title.substring(0, 27) + '...';
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<a href="#" data-slide-index="${index}" class="block px-4 py-2 text-sm hover:bg-amber-500 hover:text-gray-900 rounded">${title}</a>`;
+                menuList.appendChild(listItem);
+            });
+
+            menuBtn.addEventListener('click', (e) => { e.stopPropagation(); menuPanel.classList.toggle('hidden'); });
+            menuList.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A') {
+                    e.preventDefault();
+                    showSlide(parseInt(e.target.dataset.slideIndex));
+                    menuPanel.classList.add('hidden');
+                }
+            });
+            document.addEventListener('click', (e) => {
+                if (!menuBtn.contains(e.target) && !menuPanel.contains(e.target)) {
+                    menuPanel.classList.add('hidden');
+                }
+            });
+
+            // --- LÓGICA DE LOS MODALES (IMAGEN Y VIDEO) ---
+            function setupGalleryListeners() {
+                document.querySelectorAll('.gallery-item').forEach(img => {
+                    img.addEventListener('click', () => {
+                        modalImage.src = img.src;
+                        imageModal.classList.remove('hidden');
+                    });
+                });
+                document.querySelectorAll('.gallery-video-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const videoSrc = item.dataset.videoSrc;
+                        const youtubeId = getYoutubeVideoId(videoSrc);
+                        if (youtubeId) {
+                            modalVideoIframe.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1`;
+                        } else {
+                            modalVideoIframe.src = videoSrc;
+                        }
+                        videoModal.classList.remove('hidden');
+                    });
+                });
+            }
+
+            function closeImageModal() { imageModal.classList.add('hidden'); }
+            function closeVideoModal() { 
+                videoModal.classList.add('hidden');
+                modalVideoIframe.src = ''; // Detiene el video
+            }
+
+            modalCloseImg.addEventListener('click', closeImageModal);
+            imageModal.addEventListener('click', (e) => { if (e.target === imageModal) closeImageModal(); });
+            modalCloseVid.addEventListener('click', closeVideoModal);
+            videoModal.addEventListener('click', (e) => { if (e.target === videoModal) closeVideoModal(); });
+
+            // --- LÓGICA DE LA PRESENTACIÓN ---
+            function getYoutubeVideoId(url) {
+                if (!url) return null;
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : null;
+            }
+
+            function showSlide(index) {
+                clearTimeout(contentTimer);
+                currentSlide = index;
+                
+                slides.forEach(slide => slide.querySelector('.slide-content').classList.remove('visible'));
+
+                const activeSlide = slides[index];
+                const bgImage = activeSlide.dataset.bgImage;
+                const bgVideoSrc = activeSlide.dataset.bgVideo;
+                const youtubeId = getYoutubeVideoId(bgVideoSrc);
+
+                // Resetear fondos
+                bgVideo.style.opacity = '0';
+                bgYoutubeContainer.style.opacity = '0';
+                bgVideo.pause();
+                bgYoutube.src = 'about:blank';
+
+                if (youtubeId) {
+                    body.style.backgroundImage = 'none';
+                    bgYoutube.src = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&autohide=1&iv_load_policy=3`;
+                    bgYoutubeContainer.style.opacity = '1';
+                } else if (bgVideoSrc && bgVideoSrc.trim() !== '') {
+                    body.style.backgroundImage = 'none';
+                    bgVideo.src = bgVideoSrc;
+                    bgVideo.play();
+                    bgVideo.style.opacity = '1';
+                } else {
+                    body.style.backgroundImage = `url('${bgImage || defaultBgImage}')`;
+                }
+
+                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+
+                contentTimer = setTimeout(() => {
+                    if (currentSlide === index) {
+                        activeSlide.querySelector('.slide-content').classList.add('visible');
+                    }
+                }, 200);
+
+                updateCounter();
+            }
+
+            function updateCounter() {
+                slideCounter.textContent = `Diapositiva ${currentSlide + 1} de ${slides.length}`;
+            }
+
+            function nextSlide() { showSlide((currentSlide + 1) % slides.length); }
+            function prevSlide() { showSlide((currentSlide - 1 + slides.length) % slides.length); }
+
+            // --- EVENT LISTENERS ---
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') nextSlide();
+                else if (e.key === 'ArrowLeft') prevSlide();
+                else if (e.key === 'Escape') {
+                    closeImageModal();
+                    closeVideoModal();
+                }
+            });
+
+            // Iniciar presentación
+            setupGalleryListeners();
+            showSlide(currentSlide);
+        });
+    </script>
+</body>
+</html>
